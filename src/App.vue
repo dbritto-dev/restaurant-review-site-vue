@@ -12,7 +12,7 @@
                       <div
                         class="flex flex-initial w-10 h-10 items-center justify-center cursor-pointer"
                       >
-                        O
+                        <fa-icon class="text-gray-900" icon="search"></fa-icon>
                       </div>
                       <input
                         type="text"
@@ -22,13 +22,13 @@
                       />
                       <div
                         v-if="query.length"
-                        className="flex flex-initial w-10 h-10 items-center justify-center cursor-pointer"
-                        tabIndex="0"
+                        class="flex flex-initial w-10 h-10 items-center justify-center cursor-pointer"
+                        tab-index="0"
                         role="button"
                         @keydown.prevent.enter.space="query = ''"
                         @click="query = ''"
                       >
-                        x
+                        <fa-icon class="text-gray-900" icon="times"></fa-icon>
                       </div>
                     </div>
                   </label>
