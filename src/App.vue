@@ -72,19 +72,16 @@
         </div>
       </div>
       <div class="flex-auto relative">
-        <div class="absolute inset-0"></div>
+        <div ref="mapRef" class="absolute inset-0"></div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-/* eslint-disable no-console */
-// import Vue from 'vue';
-import { ref, computed } from '@vue/composition-api';
-import { range } from './helpers';
-
-// import GMap from './components/GMap.vue';
+/* eslint-disable no-unused-vars */
+import { ref, computed, onMounted } from '@vue/composition-api';
+import { range, debounce, getCurrentPosition, noop } from './helpers';
 
 window.places = {};
 window.markers = {};
@@ -97,8 +94,56 @@ export default {
     let minRating = ref(0);
     let maxRatingRange = computed(() => range(minRating.value + 1, 6));
     let maxRating = ref(5);
+    let mapRef = ref(null);
+    let map = ref(null);
+    let service = ref(null);
+    let locationClicked = ref({ lat: 0, lng: 0 });
+    let showAddRestaurant = ref(false);
+    let centerPosition = ref(new window.google.maps.LatLng(0, 0));
 
-    return { query, minRatingRange, minRating, maxRatingRange, maxRating };
+    onMounted(() => {
+      map = new window.google.maps.Map(mapRef.value, {
+        center: new window.google.maps.LatLng(0, 0),
+        zoom: 16,
+        fullscreenControl: false,
+        mapTypeControl: false,
+        gestureHandling: 'cooperative',
+      });
+      service = new window.google.maps.places.PlacesService(map);
+
+      map.addListener('click', e => {
+        locationClicked = e.latLng.toJson();
+        showAddRestaurant = true;
+      });
+
+      map.addListener(
+        'bounds_changed',
+        debounce(() => {
+          centerPosition = map.getCenter();
+        })
+      );
+
+      getCurrentPosition()
+        .then(position => {
+          centerPosition = position;
+
+          map.setCenter(position);
+
+          new window.google.maps.Marker({
+            map,
+            position,
+            icon: {
+              url: 'images/marker.png',
+              scaledSize: { width: 32, height: 48 },
+              labelOrigin: { x: 16, y: 18 },
+            },
+            label: '😊',
+          });
+        })
+        .catch(noop);
+    });
+
+    return { query, minRatingRange, minRating, maxRatingRange, maxRating, mapRef };
   },
   components: {},
 };
