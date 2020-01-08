@@ -3,6 +3,7 @@ import VueCompositionApi from '@vue/composition-api';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fas } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
 import App from './App.vue';
 
 Vue.use(VueCompositionApi);
@@ -14,4 +15,4 @@ Vue.component('faIcon', FontAwesomeIcon);
 
 new Vue({
   render: h => h(App),
-}).$mount('#app');
+}).$mount('#root');
