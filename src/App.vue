@@ -18,15 +18,15 @@
                         type="text"
                         class="flex-auto h-10 font-bold text-gray-900 placeholder-gray-600 rounded"
                         placeholder="Search a Restaurant"
-                        v-model.trim="query"
+                        v-model.trim="state.query"
                       />
                       <div
-                        v-if="query.length > 0"
+                        v-if="state.query.length > 0"
                         class="flex flex-initial w-10 h-10 items-center justify-center cursor-pointer"
                         tab-index="0"
                         role="button"
-                        @keydown.prevent.enter.space="query = ''"
-                        @click="query = ''"
+                        @keydown.prevent.enter.space="state.query = ''"
+                        @click="state.query = ''"
                       >
                         <fa-icon class="text-gray-900" icon="times"></fa-icon>
                       </div>
@@ -37,11 +37,11 @@
                   <div class="flex-1">
                     <select
                       class="w-full h-12 px-4 font-bold text-gray-900 bg-gray-200 shadow-inner appeareance-none rounded"
-                      v-model="minRating"
+                      v-model="state.minRating"
                     >
                       <option value="0">New</option>
                       <option
-                        v-for="option in minRatingRange"
+                        v-for="option in state.minRatingRange"
                         :key="`min-rating-option-${option}`"
                         :value="option"
                         >{{ option }}</option
@@ -54,10 +54,10 @@
                   <div class="flex-1">
                     <select
                       class="w-full h-12 px-4 font-bold text-gray-900 bg-gray-200 shadow-inner appeareance-none rounded"
-                      v-model="maxRating"
+                      v-model="state.maxRating"
                     >
                       <option
-                        v-for="option in maxRatingRange"
+                        v-for="option in state.maxRatingRange"
                         :key="`min-rating-option-${option}`"
                         :value="option"
                         >{{ option }}</option
@@ -68,20 +68,62 @@
               </div>
             </nav>
           </header>
-          <div class="relative flex-1 max-h-full"></div>
+          <div class="relative flex-1 max-h-full">
+            <div class="absolute inset-0">
+              <div class="relative w-full h-full max-h-full overflow-x-hidden overflow-y-scroll">
+                <main class="p-6" @keydown.prevent="handleKeyboardNavigationPlaces($event)">
+                  <div v-if="state.placesFiltered.length > 0">
+                    <place
+                      v-for="restaurant in state.placesFiltered"
+                      :key="restaurant.id"
+                      :id="restaurant.id"
+                      :name="restaurant.name"
+                      :cover="restaurant.cover"
+                      :types="restaurant.types"
+                      :rating="restaurant.rating"
+                      :ratings="restaurant.ratings"
+                      :handleClick="state.placeId = restaurant.id"
+                    ></place>
+                  </div>
+                  <div v-else>
+                    <div className="flex items-center justify-center mb-6">
+                      <fa-icon className="text-purple-400" icon="sad-tear" size="5x"></fa-icon>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900 text-center">
+                      No Results!
+                    </div>
+                    <div className="text-gray-700 text-center">
+                      Sorry there are no results for this search. Please try again.
+                    </div>
+                  </div>
+                </main>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="flex-auto relative">
-        <div ref="mapRef" class="absolute inset-0"></div>
+        <div ref="mapContainer" class="absolute inset-0"></div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-/* eslint-disable no-unused-vars */
-import { ref, computed, onMounted } from '@vue/composition-api';
-import { range, debounce, getCurrentPosition, noop } from './helpers';
+/* eslint-disable no-unused-vars, no-console */
+import { reactive, ref, computed, watch, onMounted } from '@vue/composition-api';
+import {
+  range,
+  debounce,
+  getCurrentPosition,
+  getNearbyPlaces,
+  getSortedPlaces,
+  getFilteredPlaces,
+  cleanMarkers,
+  noop,
+} from './helpers';
+
+import Place from './components/Place.vue';
 
 window.places = {};
 window.markers = {};
@@ -89,48 +131,57 @@ window.markers = {};
 export default {
   name: 'app',
   setup() {
-    let query = ref('');
-    let minRatingRange = range(1, 5);
-    let minRating = ref(0);
-    let maxRatingRange = computed(() => range(minRating.value + 1, 6));
-    let maxRating = ref(5);
-    let mapRef = ref(null);
-    let map = ref(null);
-    let service = ref(null);
-    let locationClicked = ref({ lat: 0, lng: 0 });
-    let showAddRestaurant = ref(false);
-    let centerPosition = ref(new window.google.maps.LatLng(0, 0));
+    let mapContainer = ref(null);
+    let state = reactive({
+      query: '',
+      minRatingRange: range(1, 5),
+      minRating: 0,
+      maxRatingRange: computed(() => range(state.minRating + 1, 6)),
+      maxRating: 5,
+      map: null,
+      service: null,
+      locationClicked: { lat: 0, lng: 0 },
+      showAddRestaurant: false,
+      showAddReview: false,
+      centerPosition: new window.google.maps.LatLng(0, 0),
+      places: {},
+      placesFiltered: computed(() =>
+        getSortedPlaces(
+          getFilteredPlaces(state.places, state.query, state.minRating, state.maxRating)
+        )
+      ),
+      placeId: null,
+    });
 
     onMounted(() => {
-      map = new window.google.maps.Map(mapRef.value, {
+      state.map = new window.google.maps.Map(mapContainer.value, {
         center: new window.google.maps.LatLng(0, 0),
         zoom: 16,
         fullscreenControl: false,
         mapTypeControl: false,
         gestureHandling: 'cooperative',
       });
-      service = new window.google.maps.places.PlacesService(map);
+      state.service = new window.google.maps.places.PlacesService(state.map);
 
-      map.addListener('click', e => {
-        locationClicked = e.latLng.toJson();
-        showAddRestaurant = true;
+      state.map.addListener('click', e => {
+        state.locationClicked = e.latLng.toJson();
+        state.showAddRestaurant = true;
       });
 
-      map.addListener(
+      state.map.addListener(
         'bounds_changed',
         debounce(() => {
-          centerPosition = map.getCenter();
+          state.centerPosition = state.map.getCenter();
         })
       );
 
       getCurrentPosition()
         .then(position => {
-          centerPosition = position;
-
-          map.setCenter(position);
+          state.centerPosition = position;
+          state.map.setCenter(position);
 
           new window.google.maps.Marker({
-            map,
+            map: state.map,
             position,
             icon: {
               url: 'images/marker.png',
@@ -143,9 +194,98 @@ export default {
         .catch(noop);
     });
 
-    return { query, minRatingRange, minRating, maxRatingRange, maxRating, mapRef };
+    watch(
+      () => state.centerPosition,
+      () => {
+        getNearbyPlaces(state.service, state.centerPosition)
+          .then(result => {
+            state.places = result;
+          })
+          .catch(noop);
+      }
+    );
+
+    watch(
+      () => state.places,
+      () => {
+        cleanMarkers();
+
+        const markers = Object.values(state.places).reduce(
+          (accumulator, { location: position, id, rating }) => {
+            const marker = new window.google.maps.Marker({
+              map: state.map,
+              position,
+              icon: {
+                url: 'images/marker.png',
+                scaledSize: { width: 32, height: 48 },
+                labelOrigin: { x: 16, y: 18 },
+              },
+              label: {
+                fontFamily: '"Montserrat", sans-serif',
+                fontWeight: '600',
+                fontSize: '12px',
+                color: '#fff',
+                text: rating > 0 ? rating.toFixed(1) : 'N',
+              },
+            });
+
+            marker.addListener('click', () => {
+              state.placeId = id;
+            });
+
+            accumulator[id] = marker;
+
+            return accumulator;
+          },
+          {}
+        );
+
+        window.markers = markers;
+      }
+    );
+
+    watch(
+      () => state.placeId,
+      () => {
+        if (state.placeId && !Object.prototype.hasOwnProperty.call(state.places, state.placeId)) {
+          state.placeId = null;
+        }
+      }
+    );
+
+    let addNewRestaurant = data => {
+      window.places[data.id] = data;
+
+      state.places[data.id] = window.places[data.id];
+      state.showAddRestaurant = false;
+    };
+
+    let addNewReview = (data, place) => {
+      const reviews = [data, ...place.reviews];
+      const rating = place.rating
+        ? // Incremental Average:
+          // Formula: ( ( ( Total Count - 1 ) * Previous Rating (AVG) ) + New Rating ) / Total Count
+          (place.ratings * place.rating + data.rating) / (place.ratings + 1)
+        : data.rating;
+      const ratings = place.ratings + 1;
+
+      window.places[place.id] = {
+        ...place,
+        rating,
+        ratings,
+        reviews,
+      };
+      window.markers[place.id].setLabel(rating.toString());
+
+      state.places[place.id] = window.places[place.id];
+      state.showAddReview = false;
+    };
+
+    let handleKeyboardNavigationPlaces = () => {};
+
+    return { state, mapContainer, addNewRestaurant, addNewReview, handleKeyboardNavigationPlaces };
   },
-  components: {},
+  components: { Place },
 };
 </script>
 
