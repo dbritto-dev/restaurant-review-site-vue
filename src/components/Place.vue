@@ -3,8 +3,8 @@
     role="button"
     tabIndex="0"
     class="flex p-3 -mx-3 my-2 rounded hover:shadow-md focus:shadow-md"
-    @keydown.prevent.enter.space="handleClick($event)"
-    @click="handleClick($event)"
+    @keydown.prevent.enter.space="handleClick"
+    @click.prevent="handleClick"
   >
     <div class="w-32 min-w-32 h-32">
       <img
@@ -35,12 +35,20 @@
 </template>
 
 <script>
+/* eslint-disable no-unused-vars, no-console */
 import RatingBadge from './RatingBadge.vue';
 import RatingTypeBadge from './RestaurantTypeBadge.vue';
 
 export default {
   name: 'Place',
-  props: ['name', 'cover', 'rating', 'ratings', 'types', 'handleClick'],
+  props: ['name', 'cover', 'rating', 'ratings', 'types'],
+  setup(_, { emit }) {
+    let handleClick = () => {
+      emit('handleClick');
+    };
+
+    return { handleClick };
+  },
   components: { RatingBadge, RatingTypeBadge },
 };
 </script>

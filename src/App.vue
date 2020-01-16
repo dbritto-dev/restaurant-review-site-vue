@@ -82,17 +82,17 @@
                       :types="restaurant.types"
                       :rating="restaurant.rating"
                       :ratings="restaurant.ratings"
-                      :handleClick="state.placeId = restaurant.id"
+                      @handleClick="state.placeId = restaurant.id"
                     ></place>
                   </div>
                   <div v-else>
-                    <div className="flex items-center justify-center mb-6">
-                      <fa-icon className="text-purple-400" icon="sad-tear" size="5x"></fa-icon>
+                    <div class="flex items-center justify-center mb-6">
+                      <fa-icon class="text-purple-400" icon="sad-tear" size="5x"></fa-icon>
                     </div>
-                    <div className="text-2xl font-bold text-gray-900 text-center">
+                    <div class="text-2xl font-bold text-gray-900 text-center">
                       No Results!
                     </div>
-                    <div className="text-gray-700 text-center">
+                    <div class="text-gray-700 text-center">
                       Sorry there are no results for this search. Please try again.
                     </div>
                   </div>
@@ -102,6 +102,23 @@
           </div>
         </div>
       </div>
+
+      <div v-if="state.showPlaceDetails" class="absolute left-xl w-full max-w-lg h-screen z-20">
+        <div class="absolute inset-0 bg-black opacity-50 -z-1" />
+        <div class="p-6"></div>
+      </div>
+
+      <div v-if="state.showAddRestaurant" class="absolute left-xl w-full max-w-lg h-screen z-20">
+        <div class="absolute inset-0 bg-black opacity-50 -z-1" />
+        <div class="p-6">
+          <add-restaurant-form
+            :location="state.locationClicked"
+            @handleCancel="handleCancelAddRestaurantForm"
+            @handleSubmit="handleSubmitAddRestaurantForm"
+          ></add-restaurant-form>
+        </div>
+      </div>
+
       <div class="flex-auto relative">
         <div ref="mapContainer" class="absolute inset-0"></div>
       </div>
@@ -124,6 +141,7 @@ import {
 } from './helpers';
 
 import Place from './components/Place.vue';
+import AddRestaurantForm from './components/AddRestaurantForm.vue';
 
 window.places = {};
 window.markers = {};
@@ -151,6 +169,7 @@ export default {
         )
       ),
       placeId: null,
+      showPlaceDetails: computed(() => !!state.placeId),
     });
 
     onMounted(() => {
@@ -164,7 +183,7 @@ export default {
       state.service = new window.google.maps.places.PlacesService(state.map);
 
       state.map.addListener('click', e => {
-        state.locationClicked = e.latLng.toJson();
+        state.locationClicked = e.latLng.toJSON();
         state.showAddRestaurant = true;
       });
 
@@ -204,6 +223,13 @@ export default {
           .catch(noop);
       }
     );
+
+    // watch(
+    //   () => state.locationClicked,
+    //   () => {
+    //     console.log(state.locationClicked);
+    //   }
+    // );
 
     watch(
       () => state.places,
@@ -245,11 +271,18 @@ export default {
     );
 
     watch(
-      () => state.placeId,
+      () => state.places,
       () => {
         if (state.placeId && !Object.prototype.hasOwnProperty.call(state.places, state.placeId)) {
           state.placeId = null;
         }
+      }
+    );
+
+    watch(
+      () => state.placeId,
+      () => {
+        console.log(state.placeId);
       }
     );
 
@@ -283,9 +316,28 @@ export default {
 
     let handleKeyboardNavigationPlaces = () => {};
 
-    return { state, mapContainer, addNewRestaurant, addNewReview, handleKeyboardNavigationPlaces };
+    let handlePlaceClick = placeId => {
+      state.placeId = placeId;
+    };
+
+    let handleCancelAddRestaurantForm = () => {
+      state.showAddRestaurant = false;
+    };
+
+    let handleSubmitAddRestaurantForm = () => {};
+
+    return {
+      state,
+      mapContainer,
+      addNewRestaurant,
+      addNewReview,
+      handleKeyboardNavigationPlaces,
+      handlePlaceClick,
+      handleCancelAddRestaurantForm,
+      handleSubmitAddRestaurantForm,
+    };
   },
-  components: { Place },
+  components: { Place, AddRestaurantForm },
 };
 </script>
 
@@ -296,7 +348,10 @@ body {
 .left-xl {
   left: 36rem;
 }
-.z-1 {
+.-z-1 {
   z-index: -1;
+}
+.max-w-lg {
+  max-width: 32rem;
 }
 </style>
