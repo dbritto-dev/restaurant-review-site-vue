@@ -103,9 +103,48 @@
         </div>
       </div>
 
-      <div v-if="state.showPlaceDetails" class="absolute left-xl w-full max-w-lg h-screen z-20">
-        <div class="absolute inset-0 bg-black opacity-50 -z-1" />
-        <div class="p-6"></div>
+      <div v-if="state.showPlaceDetails">
+        <query
+          :query="getPlaceDetailsQuery"
+          :variables="{ service: state.service, placeId: state.placeId }"
+        >
+          <template slot-scope="{ loading, data }">
+            <div v-if="loading" class="absolute left-xl w-full max-w-lg h-screen bg-white z-10">
+              <scrollable :trigger="state.placeId">
+                <place-details-placeholder></place-details-placeholder>
+              </scrollable>
+            </div>
+
+            <div
+              v-else
+              role="dialog"
+              tabIndex="0"
+              class="absolute left-xl w-full max-w-lg h-screen bg-white z-10"
+            >
+              <scrollable :trigger="state.placeId">
+                <place-details
+                  :place="data"
+                  @handleClickAddReview="handleClickAddReview"
+                  @handleClose="handleClosePlaceDetails"
+                ></place-details>
+
+                <div
+                  v-if="state.showAddReview"
+                  class="absolute left-xl w-full max-w-lg h-screen z-20"
+                >
+                  <div class="absolute inset-0 bg-black opacity-50 -z-1" />
+
+                  <div class="p-6">
+                    <add-review-form
+                      @handleSubmit="handleSubmitAddReviewForm"
+                      @handleCancel="handleCancelAddReviewForm"
+                    ></add-review-form>
+                  </div>
+                </div>
+              </scrollable>
+            </div>
+          </template>
+        </query>
       </div>
 
       <div v-if="state.showAddRestaurant" class="absolute left-xl w-full max-w-lg h-screen z-20">
@@ -128,6 +167,7 @@
 
 <script>
 /* eslint-disable no-unused-vars, no-console */
+/* eslint-disable vue/no-unused-components */
 import { reactive, ref, computed, watch, onMounted } from '@vue/composition-api';
 import {
   range,
@@ -136,12 +176,18 @@ import {
   getNearbyPlaces,
   getSortedPlaces,
   getFilteredPlaces,
+  getPlaceDetails,
   cleanMarkers,
   noop,
 } from './helpers';
 
 import Place from './components/Place.vue';
 import AddRestaurantForm from './components/AddRestaurantForm.vue';
+import AddReviewForm from './components/AddReviewForm.vue';
+import PlaceDetails from './components/PlaceDetails.vue';
+import PlaceDetailsPlaceholder from './components/PlaceDetailsPlaceholder.vue';
+import Scrollable from './components/Scrollable.vue';
+import Query from './components/Query.vue';
 
 window.places = {};
 window.markers = {};
@@ -171,6 +217,8 @@ export default {
       placeId: null,
       showPlaceDetails: computed(() => !!state.placeId),
     });
+
+    const getPlaceDetailsQuery = ({ service, placeId }) => getPlaceDetails(service, placeId);
 
     onMounted(() => {
       state.map = new window.google.maps.Map(mapContainer.value, {
@@ -223,13 +271,6 @@ export default {
           .catch(noop);
       }
     );
-
-    // watch(
-    //   () => state.locationClicked,
-    //   () => {
-    //     console.log(state.locationClicked);
-    //   }
-    // );
 
     watch(
       () => state.places,
@@ -326,6 +367,14 @@ export default {
 
     let handleSubmitAddRestaurantForm = () => {};
 
+    let handleClickAddReview = () => {};
+
+    let handleClosePlaceDetails = () => {
+      state.placeId = null;
+    };
+
+    console.log(state);
+
     return {
       state,
       mapContainer,
@@ -335,9 +384,20 @@ export default {
       handlePlaceClick,
       handleCancelAddRestaurantForm,
       handleSubmitAddRestaurantForm,
+      handleClickAddReview,
+      handleClosePlaceDetails,
+      getPlaceDetailsQuery,
     };
   },
-  components: { Place, AddRestaurantForm },
+  components: {
+    Place,
+    AddRestaurantForm,
+    AddReviewForm,
+    PlaceDetails,
+    PlaceDetailsPlaceholder,
+    Query,
+    Scrollable,
+  },
 };
 </script>
 

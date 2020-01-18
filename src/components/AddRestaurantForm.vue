@@ -122,7 +122,7 @@
 
 <script>
 /* eslint-disable no-console */
-import { reactive, onMounted, watch } from '@vue/composition-api';
+import { reactive, watch } from '@vue/composition-api';
 import { getDataURI, uniqid, noop } from '../helpers';
 
 let initialState = {
@@ -147,13 +147,12 @@ export default {
   setup(props, { emit }) {
     let state = reactive(initialState);
 
-    onMounted(() => {
-      console.log(props);
-    });
-
-    watch(() => {
-      console.log(state);
-    });
+    watch(
+      () => props.location,
+      () => {
+        state.location = props.location;
+      }
+    );
 
     let handleSubmit = () => {
       const data = { ...state, id: uniqid() };
