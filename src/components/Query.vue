@@ -10,19 +10,38 @@
 </template>
 
 <script>
-import { watch, reactive } from '@vue/composition-api';
+import { reactive, watch, onMounted, onUnmounted } from '@vue/composition-api';
 
 export default {
   name: 'Vue',
-  props: ['query', 'variables'],
+  props: {
+    query: {
+      type: Function,
+      required: true,
+    },
+    variables: {
+      type: Object,
+      default: undefined,
+    },
+    sync: {
+      type: Function,
+      default: props => () => props.variables,
+    },
+    deepSync: {
+      type: Boolean,
+      default: false,
+    },
+  },
   setup(props) {
     const state = reactive({
-      loading: false,
+      loading: true,
       error: '',
       data: null,
     });
 
     const fetch = () => {
+      state.loading = true;
+
       props
         .query(props.variables)
         .then(data => {
@@ -36,14 +55,11 @@ export default {
         });
     };
 
-    watch(
-      () => props.variables,
-      () => {
-        state.loading = true;
+    onMounted(() => fetch());
 
-        fetch();
-      }
-    );
+    let unwatch = watch(props.sync(props), () => fetch(), { deep: props.deepSync });
+
+    onUnmounted(() => unwatch());
 
     return { state, refetch: fetch };
   },
