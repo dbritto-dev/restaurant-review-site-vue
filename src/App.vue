@@ -71,7 +71,7 @@
           <div class="relative flex-1 max-h-full">
             <div class="absolute inset-0">
               <div class="relative w-full h-full max-h-full overflow-x-hidden overflow-y-scroll">
-                <main class="p-6" @keydown.prevent="handleKeyboardNavigationPlaces($event)">
+                <main class="p-6" @keydown.prevent="handleKeyboardNavigationPlaces">
                   <div v-if="state.placesFiltered.length > 0">
                     <place
                       v-for="restaurant in state.placesFiltered"
@@ -82,7 +82,7 @@
                       :types="restaurant.types"
                       :rating="restaurant.rating"
                       :ratings="restaurant.ratings"
-                      @handleClick="state.placeId = restaurant.id"
+                      @handle-click="state.placeId = restaurant.id"
                     ></place>
                   </div>
                   <div v-else>
@@ -103,10 +103,11 @@
         </div>
       </div>
 
-      <div v-if="state.showPlaceDetails">
+      <div v-if="state.showPlaceDetailsModal">
         <query
           :query="getPlaceDetailsQuery"
           :variables="{ service: state.service, placeId: state.placeId }"
+          :sync="props => () => props.variables.placeId"
         >
           <template slot-scope="{ loading, data }">
             <div v-if="loading" class="absolute left-xl w-full max-w-lg h-screen bg-white z-10">
@@ -124,36 +125,39 @@
               <scrollable :trigger="state.placeId">
                 <place-details
                   :place="data"
-                  @handleClickAddReview="handleClickAddReview"
-                  @handleClose="handleClosePlaceDetails"
+                  @handle-click-add-review="state.showAddReviewModal = true"
+                  @handle-close="state.placeId = null"
                 ></place-details>
-
-                <div
-                  v-if="state.showAddReview"
-                  class="absolute left-xl w-full max-w-lg h-screen z-20"
-                >
-                  <div class="absolute inset-0 bg-black opacity-50 -z-1" />
-
-                  <div class="p-6">
-                    <add-review-form
-                      @handleSubmit="handleSubmitAddReviewForm"
-                      @handleCancel="handleCancelAddReviewForm"
-                    ></add-review-form>
-                  </div>
-                </div>
               </scrollable>
+            </div>
+
+            <div
+              v-if="state.showAddReviewModal"
+              class="absolute left-xl w-full max-w-lg h-screen z-20"
+            >
+              <div class="absolute inset-0 bg-black opacity-50 -z-1" />
+
+              <div class="p-6">
+                <add-review-form
+                  @handle-submit="review => addNewReview(review, data)"
+                  @handle-cancel="state.showAddReviewModal = false"
+                ></add-review-form>
+              </div>
             </div>
           </template>
         </query>
       </div>
 
-      <div v-if="state.showAddRestaurant" class="absolute left-xl w-full max-w-lg h-screen z-20">
+      <div
+        v-if="state.showAddRestaurantModal"
+        class="absolute left-xl w-full max-w-lg h-screen z-20"
+      >
         <div class="absolute inset-0 bg-black opacity-50 -z-1" />
         <div class="p-6">
           <add-restaurant-form
             :location="state.locationClicked"
-            @handleCancel="handleCancelAddRestaurantForm"
-            @handleSubmit="handleSubmitAddRestaurantForm"
+            @handle-submit="() => false"
+            @handle-cancel="state.showAddRestaurantModal = false"
           ></add-restaurant-form>
         </div>
       </div>
@@ -166,8 +170,6 @@
 </template>
 
 <script>
-/* eslint-disable no-unused-vars, no-console */
-/* eslint-disable vue/no-unused-components */
 import { reactive, ref, computed, watch, onMounted } from '@vue/composition-api';
 import {
   range,
@@ -181,6 +183,8 @@ import {
   noop,
 } from './helpers';
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 import Place from './components/Place.vue';
 import AddRestaurantForm from './components/AddRestaurantForm.vue';
 import AddReviewForm from './components/AddReviewForm.vue';
@@ -188,6 +192,8 @@ import PlaceDetails from './components/PlaceDetails.vue';
 import PlaceDetailsPlaceholder from './components/PlaceDetailsPlaceholder.vue';
 import Scrollable from './components/Scrollable.vue';
 import Query from './components/Query.vue';
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 window.places = {};
 window.markers = {};
@@ -205,8 +211,8 @@ export default {
       map: null,
       service: null,
       locationClicked: { lat: 0, lng: 0 },
-      showAddRestaurant: false,
-      showAddReview: false,
+      showAddRestaurantModal: false,
+      showAddReviewModal: false,
       centerPosition: new window.google.maps.LatLng(0, 0),
       places: {},
       placesFiltered: computed(() =>
@@ -215,7 +221,7 @@ export default {
         )
       ),
       placeId: null,
-      showPlaceDetails: computed(() => !!state.placeId),
+      showPlaceDetailsModal: computed(() => !!state.placeId),
     });
 
     const getPlaceDetailsQuery = ({ service, placeId }) => getPlaceDetails(service, placeId);
@@ -232,7 +238,7 @@ export default {
 
       state.map.addListener('click', e => {
         state.locationClicked = e.latLng.toJSON();
-        state.showAddRestaurant = true;
+        state.showAddRestaurantModal = true;
       });
 
       state.map.addListener(
@@ -320,18 +326,11 @@ export default {
       }
     );
 
-    watch(
-      () => state.placeId,
-      () => {
-        console.log(state.placeId);
-      }
-    );
-
     let addNewRestaurant = data => {
       window.places[data.id] = data;
 
       state.places[data.id] = window.places[data.id];
-      state.showAddRestaurant = false;
+      state.showAddRestaurantModal = false;
     };
 
     let addNewReview = (data, place) => {
@@ -352,28 +351,32 @@ export default {
       window.markers[place.id].setLabel(rating.toString());
 
       state.places[place.id] = window.places[place.id];
-      state.showAddReview = false;
+      state.showAddReviewModal = false;
     };
 
-    let handleKeyboardNavigationPlaces = () => {};
+    const handleKeyboardNavigationPlaces = e => {
+      e.preventDefault();
 
-    let handlePlaceClick = placeId => {
-      state.placeId = placeId;
+      const next = e.target.nextSibling;
+      const previous = e.target.previousSibling;
+
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          if (previous) {
+            previous.focus();
+          }
+          break;
+        case 'ArrowDown':
+        case 'ArrowRight':
+          if (next) {
+            next.focus();
+          }
+          break;
+        default:
+          break;
+      }
     };
-
-    let handleCancelAddRestaurantForm = () => {
-      state.showAddRestaurant = false;
-    };
-
-    let handleSubmitAddRestaurantForm = () => {};
-
-    let handleClickAddReview = () => {};
-
-    let handleClosePlaceDetails = () => {
-      state.placeId = null;
-    };
-
-    console.log(state);
 
     return {
       state,
@@ -381,11 +384,6 @@ export default {
       addNewRestaurant,
       addNewReview,
       handleKeyboardNavigationPlaces,
-      handlePlaceClick,
-      handleCancelAddRestaurantForm,
-      handleSubmitAddRestaurantForm,
-      handleClickAddReview,
-      handleClosePlaceDetails,
       getPlaceDetailsQuery,
     };
   },
