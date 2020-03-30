@@ -44,7 +44,7 @@ export default {
   props: ['name', 'cover', 'rating', 'ratings', 'types'],
   setup(_, { emit }) {
     let handleClick = () => {
-      emit('handleClick');
+      emit('handle-click');
     };
 
     return { handleClick };

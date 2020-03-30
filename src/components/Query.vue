@@ -10,7 +10,6 @@
 </template>
 
 <script>
-/* eslint-disable no-console */
 import { watch, reactive } from '@vue/composition-api';
 
 export default {
@@ -22,8 +21,6 @@ export default {
       error: '',
       data: null,
     });
-
-    console.log(props.variables);
 
     const fetch = () => {
       props
@@ -45,8 +42,6 @@ export default {
         state.loading = true;
 
         fetch();
-
-        console.log(props.variables);
       }
     );
 

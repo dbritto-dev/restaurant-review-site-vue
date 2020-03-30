@@ -106,11 +106,11 @@ export default {
   props: ['place'],
   setup(_, { emit }) {
     let handleClose = () => {
-      emit('handleClose');
+      emit('handle-close');
     };
 
     let handleClickAddReview = () => {
-      emit('handleClickAddReview');
+      emit('handle-click-add-review');
     };
 
     return { handleClose, handleClickAddReview };
