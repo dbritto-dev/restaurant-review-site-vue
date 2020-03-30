@@ -122,8 +122,22 @@
 
 <script>
 /* eslint-disable no-console */
-import { reactive, watch } from '@vue/composition-api';
+import { reactive, watch, onMounted, onUnmounted } from '@vue/composition-api';
 import { getDataURI, uniqid, noop } from '../helpers';
+
+const useEscape = handleEscape => {
+  onMounted(() => window.addEventListener('keydown', handleEscape));
+
+  onUnmounted(() => window.removeEventListener('keydown', handleEscape));
+};
+
+const useResetStateToInitialState = (state, initialState) => {
+  onUnmounted(() => {
+    Object.entries(initialState).map(([key, value]) => {
+      state[key] = value;
+    });
+  });
+};
 
 let initialState = {
   name: '',
@@ -145,23 +159,19 @@ export default {
   name: 'AddRestaurantForm',
   props: ['location'],
   setup(props, { emit }) {
-    let state = reactive(initialState);
-
-    watch(
-      () => props.location,
-      () => {
-        state.location = props.location;
-      }
-    );
+    // Use reactive({ ...initialState }) instead of reactive(initialState)
+    // because `reactive(initialState)` override the value of initialState
+    // initialState<Object> -> initialState<Observable>
+    let state = reactive({ ...initialState });
 
     let handleSubmit = () => {
       const data = { ...state, id: uniqid() };
 
-      emit('handleSubmit', data);
+      emit('handle-submit', data);
     };
 
     let handleCancel = () => {
-      emit('handleCancel');
+      emit('handle-cancel');
     };
 
     let handleChangeCover = e => {
@@ -171,6 +181,19 @@ export default {
         })
         .catch(noop);
     };
+
+    watch(
+      () => props.location,
+      () => {
+        state.location = props.location;
+      }
+    );
+
+    // Reset the state to initial state after the component is unmounted because vue keeps the
+    // the value of reactive()
+    useResetStateToInitialState(state, initialState);
+
+    useEscape(e => e.key === 'Escape' && handleCancel(e));
 
     return { state, handleSubmit, handleCancel, handleChangeCover };
   },
