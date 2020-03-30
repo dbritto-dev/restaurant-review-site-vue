@@ -121,7 +121,6 @@
 </template>
 
 <script>
-/* eslint-disable no-console */
 import { reactive, watch, onMounted, onUnmounted } from '@vue/composition-api';
 import { getDataURI, uniqid, noop } from '../helpers';
 
@@ -157,7 +156,12 @@ let initialState = {
 
 export default {
   name: 'AddRestaurantForm',
-  props: ['location'],
+  props: {
+    location: {
+      type: [Object, window.google.maps.LatLng],
+      required: true,
+    },
+  },
   setup(props, { emit }) {
     // Use reactive({ ...initialState }) instead of reactive(initialState)
     // because `reactive(initialState)` override the value of initialState
