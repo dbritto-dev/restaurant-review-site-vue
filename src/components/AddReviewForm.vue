@@ -134,7 +134,6 @@
 </template>
 
 <script>
-/* eslint-disable no-console */
 import { reactive, onMounted, onUnmounted } from '@vue/composition-api';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
