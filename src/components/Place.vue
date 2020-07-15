@@ -7,15 +7,12 @@
     @click.prevent="handleClick"
   >
     <div class="w-32 min-w-32 h-32">
-      <img
-        v-if="cover"
-        alt="cover"
+      <cover
+        :source="cover"
+        :fallback="`https://www.toptal.com/designers/subtlepatterns/patterns/food.png`"
         class="w-32 h-32 object-cover bg-gray-200 rounded"
-        :src="cover"
+        alt="cover"
       />
-      <div v-else class="flex items-center justify-center w-32 h-32 bg-gray-200 rounded">
-        <span class="uppercase text-lg font-bold">{{ name.charAt(0) }}</span>
-      </div>
     </div>
     <div class="flex flex-col items-start flex-1 pl-4">
       <div class="flex items-start mb-2">
@@ -39,6 +36,7 @@
 
 import RatingBadge from './RatingBadge.vue';
 import RatingTypeBadge from './RestaurantTypeBadge.vue';
+import Cover from './Cover.vue';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -52,7 +50,7 @@ export default {
 
     return { handleClick };
   },
-  components: { RatingBadge, RatingTypeBadge },
+  components: { RatingBadge, RatingTypeBadge, Cover },
 };
 </script>
 
