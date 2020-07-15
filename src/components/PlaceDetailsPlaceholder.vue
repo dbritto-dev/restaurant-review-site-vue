@@ -16,12 +16,12 @@
       </div>
       <div class="px-6">
         <div class="m-0">
-          <div class="text-xs uppercase font-bold w-24 bg-gray-400">&nbsp;</div>
+          <div class="text-xs uppercase font-bold w-24 bg-gray-400" v-html="'&nbsp;'"></div>
         </div>
         <div class="mt-2">
-          <div class="text-4xl font-bold leading-none my-2 w-full bg-gray-400">&nbsp;</div>
+          <div class="text-4xl font-bold leading-none my-2 w-full bg-gray-400" v-html="'&nbsp;'"></div>
           <div class="mt-2">
-            <div class="text-sm w-20 bg-gray-400">&nbsp;</div>
+            <div class="text-sm w-20 bg-gray-400" v-html="'&nbsp;'"></div>
           </div>
         </div>
       </div>
@@ -41,7 +41,7 @@
       <section>
         <div class="mx-6">
           <header class="mb-6">
-            <div class="text-2xl font-bold w-32 bg-gray-400">&nbsp;</div>
+            <div class="text-2xl font-bold w-32 bg-gray-400" v-html="'&nbsp;'"></div>
           </header>
 
           <review-placeholder />
