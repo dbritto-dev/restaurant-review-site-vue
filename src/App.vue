@@ -279,11 +279,11 @@ export default {
     );
 
     watch(
-      () => state.places,
+      () => state.placesFiltered,
       () => {
         cleanMarkers();
 
-        const markers = Object.values(state.places).reduce(
+        const markers = Object.values(state.placesFiltered).reduce(
           (accumulator, { location: position, id, rating }) => {
             const marker = new window.google.maps.Marker({
               map: state.map,

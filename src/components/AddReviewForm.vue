@@ -5,78 +5,18 @@
         <div class="text-xs leading-none">Rating</div>
         <div class="mt-1">
           <div class="flex justify-around py-1">
-            <label role="button" tabIndex="0" class="cursor-pointer">
+            <label v-for="rating in 5" :key="rating" role="button" tabIndex="0" class="cursor-pointer">
               <fa-icon
-                :class="[state.rating === 1 ? 'text-gray-900' : 'text-gray-600']"
-                icon="angry"
+                :class="[state.rating === rating ? 'text-gray-900' : 'text-gray-600']"
+                :icon="['angry', 'frown', 'meh', 'smile', 'laugh'][rating - 1]"
                 size="3x"
               ></fa-icon>
               <input
                 class="hidden"
                 type="radio"
                 name="rating"
-                value="1"
-                :checked="state.rating === 1"
-                @change="handleChangeRating"
-              />
-            </label>
-            <label role="button" tabIndex="0" class="cursor-pointer">
-              <fa-icon
-                :class="[state.rating === 2 ? 'text-gray-900' : 'text-gray-600']"
-                icon="frown"
-                size="3x"
-              ></fa-icon>
-              <input
-                class="hidden"
-                type="radio"
-                name="rating"
-                value="2"
-                :checked="state.rating === 2"
-                @change="handleChangeRating"
-              />
-            </label>
-            <label role="button" tabIndex="0" class="cursor-pointer">
-              <fa-icon
-                :class="[state.rating === 3 ? 'text-gray-900' : 'text-gray-600']"
-                icon="meh"
-                size="3x"
-              ></fa-icon>
-              <input
-                class="hidden"
-                type="radio"
-                name="rating"
-                value="3"
-                :checked="state.rating === 3"
-                @change="handleChangeRating"
-              />
-            </label>
-            <label role="button" tabIndex="0" class="cursor-pointer">
-              <fa-icon
-                :class="[state.rating === 4 ? 'text-gray-900' : 'text-gray-600']"
-                icon="smile"
-                size="3x"
-              ></fa-icon>
-              <input
-                class="hidden"
-                type="radio"
-                name="rating"
-                value="4"
-                :checked="state.rating === 4"
-                @change="handleChangeRating"
-              />
-            </label>
-            <label role="button" tabIndex="0" class="cursor-pointer">
-              <fa-icon
-                :class="[state.rating === 5 ? 'text-gray-900' : 'text-gray-600']"
-                icon="laugh"
-                size="3x"
-              ></fa-icon>
-              <input
-                class="hidden"
-                type="radio"
-                name="rating"
-                value="5"
-                :checked="state.rating === 5"
+                :value="rating"
+                :checked="state.rating === rating"
                 @change="handleChangeRating"
               />
             </label>
