@@ -14,20 +14,21 @@
       </nav>
 
       <div class="mb-8">
-        <img
-          v-if="place.cover"
+        <cover
+          :source="place.cover"
+          :fallback="`https://www.toptal.com/designers/subtlepatterns/patterns/food.png`"
           class="w-full h-64 object-cover bg-gray-200"
           alt="cover"
-          :src="place.cover"
         />
-        <div v-else class="w-full h-64 object-cover bg-gray-200" />
       </div>
       <div class="px-6">
         <div class="m-0">
           <span class="text-xs uppercase font-bold text-gray-600">Restaurant</span>
         </div>
         <div class="mt-2">
-          <div class="text-4xl font-bold leading-none text-gray-900 my-2">{{ place.name }}</div>
+          <div class="text-4xl capitalize font-bold leading-none text-gray-900 my-2">
+            {{ place.name }}
+          </div>
           <div class="mt-2">
             <span class="text-sm">{{ place.ratings }} ratings</span>
           </div>
@@ -102,6 +103,7 @@
 import Divider from './Divider.vue';
 import Venue from './Venue.vue';
 import Review from './Review.vue';
+import Cover from './Cover.vue';
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -119,7 +121,7 @@ export default {
 
     return { handleClose, handleClickAddReview };
   },
-  components: { Divider, Venue, Review },
+  components: { Divider, Venue, Review, Cover },
 };
 </script>
 
