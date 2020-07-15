@@ -16,13 +16,10 @@ const asyncLoadImage = src =>
     img.src = src;
   });
 
-const getIsIntersecting = entry => {
-  if ('isIntersecting' in IntersectionObserverEntry.prototype) {
-    return entry.isIntersecting;
-  }
-
-  return entry.intersectionRatio > 0;
-};
+const getIsIntersecting = entry =>
+  'isIntersecting' in IntersectionObserverEntry.prototype
+    ? entry.isIntersecting
+    : entry.intersectionRatio > 0;
 
 export default {
   name: 'Cover',
